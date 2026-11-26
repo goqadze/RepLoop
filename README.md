@@ -2,6 +2,8 @@
 
 An interval timer for HIIT and CrossFit in a single HTML file. It has a voice coach and you can install it as an app on iPhone and Mac.
 
+**Live app:** https://goqadze.github.io/RepLoop/
+
 ## Modes
 
 - **HIIT / Tabata**: prepare, work, rest, rounds, cycles, rest between cycles and a cool down
@@ -11,7 +13,7 @@ An interval timer for HIIT and CrossFit in a single HTML file. It has a voice co
 
 ## Install as an app
 
-Open the page from a web address (not as a local file), then:
+Open https://goqadze.github.io/RepLoop/, then:
 
 - **iPhone**: Safari → Share → *Add to Home Screen*
 - **Mac**: Safari → File → *Add to Dock*, or Chrome → ⋮ → Cast, save and share → *Install page as app*
