@@ -14,11 +14,16 @@
 <link rel="manifest" id="manifest">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#262626;--bar:#1c1c1c;--ink:#111;--yellow:#f8f73c;--green:#97fb4a;--red:#ff5a4e;--blue:#3aa8e8;--purple:#b48cff;--muted:#8a8a8a}
+:root{--clockEm:1.74;--textK:1;--bg:#262626;--bar:#1c1c1c;--ink:#111;--yellow:#f8f73c;--green:#97fb4a;--red:#ff5a4e;--blue:#3aa8e8;--purple:#b48cff;--muted:#8a8a8a}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
-html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:"Bebas Neue",Impact,"Arial Narrow",sans-serif;overflow:hidden;overscroll-behavior:none}
+/* Page background matches the tab bar, so any strip iOS leaves below the app blends into it */
+html,body{margin:0;height:100%;background:var(--bar);color:#fff;font-family:"Bebas Neue",Impact,"Arial Narrow",sans-serif;overflow:hidden;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
-#app{display:flex;flex-direction:column;height:100dvh;padding-top:env(safe-area-inset-top)}
+/* Top padding is 1.45x the status bar so the title clears the blur iOS draws just below it */
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);padding:calc(env(safe-area-inset-top) * 1.45) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+/* Installed iOS apps report 100dvh short by the status bar height (blank band under the tabs).
+   Add it back when the app draws behind the status bar, but never exceed the full screen (100lvh). */
+.standalone #app{height:min(100dvh + env(safe-area-inset-top),100lvh)}
 header{position:relative;text-align:center;padding:8px 0 4px;color:var(--yellow);line-height:1}
 header .mode{font-size:28px}header .total{font-size:34px}
 .icon-btn{position:absolute;top:14px;width:44px;height:44px;display:grid;place-items:center;color:var(--yellow)}
@@ -26,20 +31,27 @@ header .mode{font-size:28px}header .total{font-size:34px}
 .icon-btn svg{width:30px;height:30px}
 #reset{position:absolute;right:68px;bottom:-34px;z-index:3;width:68px;height:68px;border-radius:50%;background:var(--bg);display:grid;place-items:center;color:var(--yellow);border:4px solid var(--yellow)}
 #reset svg{width:28px}
-#main{flex:1.9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--yellow);color:var(--ink);transition:background .25s;min-height:0;position:relative;overflow:hidden}
-#phase{font-size:clamp(48px,11vh,110px);line-height:.9;margin-top:10px}
-#clock{font-size:clamp(110px,min(40vw,28vh),340px);line-height:.85;font-variant-numeric:tabular-nums;letter-spacing:-2px}
-#progress{position:absolute;left:0;bottom:0;height:8px;background:rgba(0,0,0,.25);width:0}
-#next{flex:.8;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--green);color:var(--ink);min-height:0;transition:background .25s}
-#nextLabel{font-size:clamp(22px,4vh,36px);line-height:1}
-#nextClock{font-size:clamp(56px,11vh,110px);line-height:.9}
-#controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 8px 10px}
-.stat{text-align:center;line-height:.9}
-.stat b{display:block;font-weight:400;font-size:clamp(56px,10vh,96px)}
-.stat span{font-size:clamp(22px,3.6vh,34px)}
+/* Each panel is a size container: its text is sized from the panel's own box (cqh/cqw), so it can never spill out.
+   Width limits come from the longest strings in Bebas Neue ("CYCLE REST" 3.4em, "NEXT: CYCLE REST" 5.22em,
+   "ROUNDS DONE" 4.06em), scaled by --clockEm / --textK, which measureFont() sets from the font that actually
+   loaded (a fallback font is much wider). The first font-size in each pair is for browsers without container units. */
+#main{flex:1.9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--yellow);color:var(--ink);transition:background .25s;min-height:0;position:relative;overflow:hidden;padding:36px 12px 14px;container-type:size}
+#phase,#clock,#nextLabel,#nextClock,.stat span{white-space:nowrap;letter-spacing:-.01em}
+#phase{font-size:clamp(36px,8vh,96px);font-size:min(18cqh,calc(27cqw / var(--textK)));line-height:.9}
+#clock{font-size:clamp(80px,min(36vw,22vh),300px);font-size:min(66cqh,calc(93cqw / var(--clockEm)));line-height:.82;font-variant-numeric:tabular-nums}
+#clock.long{font-size:min(66cqh,calc(76cqw / var(--clockEm)))}
+#track{position:absolute;left:0;right:0;bottom:0;height:6px;background:rgba(0,0,0,.1)}
+#progress{height:100%;width:0;background:rgba(0,0,0,.35)}
+#next{flex:.8;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--green);color:var(--ink);min-height:0;overflow:hidden;transition:background .25s;padding:6px 12px;container-type:size}
+#nextLabel{font-size:clamp(16px,3vh,30px);font-size:min(22cqh,calc(17cqw / var(--textK)));line-height:1}
+#nextClock{font-size:clamp(40px,8vh,96px);font-size:min(64cqh,calc(93cqw / var(--clockEm)));line-height:.85;font-variant-numeric:tabular-nums}
+#controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px 8px 8px}
+.stat{text-align:center;line-height:.9;min-width:0;container-type:inline-size}
+.stat b{display:block;font-weight:400;font-size:clamp(44px,8.5vh,88px);font-size:clamp(32px,min(9vh,calc(90cqw / var(--clockEm))),88px);font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:clamp(16px,3vh,28px);font-size:min(calc(22cqw / var(--textK)),32px)}
 #rStat b{color:var(--blue)}#cStat b{color:var(--yellow)}
 #play{display:flex;flex-direction:column;align-items:center;color:var(--yellow);font-size:28px}
-#play .ring{width:clamp(110px,17vh,156px);height:clamp(110px,17vh,156px);border-radius:50%;background:var(--yellow);display:grid;place-items:center;box-shadow:inset 0 0 0 6px var(--yellow),inset 0 0 0 9px #222}
+#play .ring{width:clamp(96px,14vh,140px);height:clamp(96px,14vh,140px);border-radius:50%;background:var(--yellow);display:grid;place-items:center;box-shadow:inset 0 0 0 6px var(--yellow),inset 0 0 0 9px #222}
 #play svg{width:42%;fill:#222}
 nav{display:flex;justify-content:space-around;background:var(--bar);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
 nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;padding:8px 0;border-radius:30px;color:#ddd}
@@ -63,7 +75,13 @@ select{font:inherit;font-size:18px;background:#333;color:#fff;border:0;border-ra
 .presets button{background:#333;border-radius:16px;padding:8px 14px;font-size:22px}
 .done{background:var(--yellow);color:#111;border-radius:14px;width:100%;padding:12px;font-size:30px;margin-top:16px}
 .hint{font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);line-height:1.4;margin-top:14px}
-@media (orientation:landscape) and (max-height:560px){#next{display:none}#phase{font-size:13vh}#clock{font-size:38vh}}
+/* Phone in landscape: big timer on the left, header, controls and tabs stacked on the right */
+@media (orientation:landscape) and (max-height:500px){
+  #app{display:grid;grid-template-columns:1fr min(44vw,340px);grid-template-rows:auto 1fr auto;grid-template-areas:"main header" "main controls" "main nav"}
+  header{grid-area:header}#main{grid-area:main;padding-top:14px}#next{display:none}#controls{grid-area:controls}
+  nav{grid-area:nav;padding-top:4px}nav button{padding:6px 0}nav button span{display:none}
+  #reset{position:fixed;left:calc(env(safe-area-inset-left) + 12px);top:12px;right:auto;bottom:auto;width:52px;height:52px;border-width:3px}
+}
 </style>
 </head>
 <body>
@@ -75,7 +93,7 @@ select{font:inherit;font-size:18px;background:#333;color:#fff;border:0;border-ra
     <button class="icon-btn" id="voiceBtn" aria-label="Toggle voice"></button>
     <button id="reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button>
   </header>
-  <section id="main"><div id="phase">PREPARE</div><div id="clock">00:10</div><div id="progress"></div></section>
+  <section id="main"><div id="phase">PREPARE</div><div id="clock">00:10</div><div id="track"><div id="progress"></div></div></section>
   <section id="next"><div id="nextLabel">WORK</div><div id="nextClock">00:30</div></section>
   <section id="controls">
     <div class="stat" id="rStat"><b id="rVal">10</b><span id="rLab">ROUNDS LEFT</span></div>
@@ -88,6 +106,9 @@ select{font:inherit;font-size:18px;background:#333;color:#fff;border:0;border-ra
 <div id="sheet"><div class="panel" id="panel"></div></div>
 
 <script>
+/* Installed (Home Screen / Dock) app: enables the iOS full-height fix in CSS */
+if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)document.documentElement.classList.add('standalone');
+
 /* ================= Install support (manifest + icon generated inline) ================= */
 const ICON_SVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#262626"/><circle cx="256" cy="276" r="160" fill="none" stroke="#f8f73c" stroke-width="40"/><rect x="226" y="60" width="60" height="50" rx="12" fill="#f8f73c"/><path d="M256 276 L256 160" stroke="#97fb4a" stroke-width="36" stroke-linecap="round"/><circle cx="256" cy="276" r="26" fill="#97fb4a"/></svg>`;
 function makePngIcon(size){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');const s=size/512;
@@ -222,6 +243,7 @@ function render(e){
   $('main').style.background=COLORS[p.t];
   $('phase').textContent=done?'DONE':(p.label&&p.t==='work'?p.label:NAMES[p.t]);
   $('clock').textContent=done?'00:00':(p.up?fmtUp(e):fmt(p.d-e));
+  $('clock').classList.toggle('long',$('clock').textContent.length>5);
   $('progress').style.width=done||!isFinite(p.d)?'0':(Math.min(1,e/p.d)*100)+'%';
   if(next){$('next').style.background=COLORS[next.t];$('nextLabel').textContent=next.label&&next.t==='work'?'NEXT: '+next.label:'NEXT: '+NAMES[next.t];$('nextClock').textContent=fmt(next.d)}
   else{$('next').style.background='#3a3a3a';$('nextLabel').textContent=done?'WELL DONE':'FINISH';$('nextClock').textContent=done?'💪':'--:--'}
@@ -256,7 +278,7 @@ const TAB_ICONS={
   emom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 12 7 7"/></svg>',
   amrap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>',
   stopwatch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>'};
-function drawTabs(){$('tabs').innerHTML=Object.keys(MODES).map(k=>`<button data-m="${k}" class="${S.mode===k?'on':''}">${TAB_ICONS[k]}${k==='hiit'?'HIIT':k==='stopwatch'?'FOR TIME':MODES[k]}</button>`).join('');
+function drawTabs(){$('tabs').innerHTML=Object.keys(MODES).map(k=>`<button data-m="${k}" class="${S.mode===k?'on':''}">${TAB_ICONS[k]}<span>${k==='hiit'?'HIIT':k==='stopwatch'?'FOR TIME':MODES[k]}</span></button>`).join('');
   $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(running&&!confirm('Stop current workout?'))return;S.mode=b.dataset.m;save();laps=0;drawTabs();reset()})}
 
 /* ================= Settings sheet ================= */
@@ -306,6 +328,16 @@ $('play').onclick=toggle;
 function drawVoiceBtn(){$('voiceBtn').innerHTML=S.global.voice?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'}
 $('voiceBtn').onclick=()=>{S.global.voice=!S.global.voice;save();drawVoiceBtn();if(S.global.voice){unlockAudio();say('Voice on')}};
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&!$('sheet').classList.contains('open')){e.preventDefault();toggle()}else if(e.key==='r'){laps=0;reset()}});
+
+/* Measure the font in use (Bebas Neue, or a wider fallback while it loads or when offline) so CSS can size text to fit */
+function measureFont(){
+  const w=t=>{const s=document.createElement('span');s.style.cssText='position:absolute;visibility:hidden;white-space:nowrap;font-size:100px;letter-spacing:-.01em;font-variant-numeric:tabular-nums';s.textContent=t;document.body.appendChild(s);const v=s.getBoundingClientRect().width/100;s.remove();return v};
+  const r=document.documentElement.style;
+  r.setProperty('--clockEm',w('00:00').toFixed(3));
+  r.setProperty('--textK',(w('NEXT: CYCLE REST')/5.22).toFixed(3));
+}
+measureFont();
+if(document.fonts){document.fonts.ready.then(measureFont);if(document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',measureFont)}
 
 drawTabs();drawVoiceBtn();reset();
 </script>
