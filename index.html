@@ -19,11 +19,12 @@
 /* Page background matches the tab bar, so any strip iOS leaves below the app blends into it */
 html,body{margin:0;height:100%;background:var(--bar);color:#fff;font-family:"Bebas Neue",Impact,"Arial Narrow",sans-serif;overflow:hidden;overscroll-behavior:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
-/* Top padding is 1.45x the status bar so the title clears the blur iOS draws just below it */
+/* Top padding is 1.45x the status bar so the title clears the blur iOS draws just below it.
+   Height stays 100dvh: in iOS 26+ Home Screen apps the visible web area really is that tall (812 of 874pt),
+   and iOS fills the strip below it with the page background, which matches the tab bar. */
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);padding:calc(env(safe-area-inset-top) * 1.45) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
-/* Installed iOS apps report 100dvh short by the status bar height (blank band under the tabs).
-   Add it back when the app draws behind the status bar, but never exceed the full screen (100lvh). */
-.standalone #app{height:min(100dvh + env(safe-area-inset-top),100lvh)}
+/* That strip already covers the home indicator, so the tab bar drops its bottom safe-area padding */
+.bottom-band nav{padding-bottom:8px}
 header{position:relative;text-align:center;padding:8px 0 4px;color:var(--yellow);line-height:1}
 header .mode{font-size:28px}header .total{font-size:34px}
 .icon-btn{position:absolute;top:14px;width:44px;height:44px;display:grid;place-items:center;color:var(--yellow)}
@@ -106,9 +107,6 @@ select{font:inherit;font-size:18px;background:#333;color:#fff;border:0;border-ra
 <div id="sheet"><div class="panel" id="panel"></div></div>
 
 <script>
-/* Installed (Home Screen / Dock) app: enables the iOS full-height fix in CSS */
-if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)document.documentElement.classList.add('standalone');
-
 /* ================= Install support (manifest + icon generated inline) ================= */
 const ICON_SVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#262626"/><circle cx="256" cy="276" r="160" fill="none" stroke="#f8f73c" stroke-width="40"/><rect x="226" y="60" width="60" height="50" rx="12" fill="#f8f73c"/><path d="M256 276 L256 160" stroke="#97fb4a" stroke-width="36" stroke-linecap="round"/><circle cx="256" cy="276" r="26" fill="#97fb4a"/></svg>`;
 function makePngIcon(size){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');const s=size/512;
@@ -338,6 +336,18 @@ function measureFont(){
 }
 measureFont();
 if(document.fonts){document.fonts.ready.then(measureFont);if(document.fonts.addEventListener)document.fonts.addEventListener('loadingdone',measureFont)}
+
+/* iOS 26+ Home Screen apps can draw behind the status bar yet stop short of the screen bottom
+   (812 of 874pt on a 6.3" iPhone), with iOS filling the strip below with the page background.
+   The home indicator sits in that strip, so mark it and let the tab bar drop its bottom padding. */
+function hasBottomBand(innerH,innerW,screenH,safeTop){return innerH>innerW&&safeTop>0&&innerH<screenH-safeTop/2}
+function checkBottomBand(){
+  if(navigator.standalone!==true)return; // only iOS Home Screen apps
+  const p=document.createElement('div');p.style.cssText='position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top);visibility:hidden';
+  document.body.appendChild(p);const safeTop=p.getBoundingClientRect().height;p.remove();
+  document.documentElement.classList.toggle('bottom-band',hasBottomBand(innerHeight,innerWidth,Math.max(screen.width,screen.height),safeTop));
+}
+checkBottomBand();addEventListener('resize',checkBottomBand);
 
 drawTabs();drawVoiceBtn();reset();
 </script>
