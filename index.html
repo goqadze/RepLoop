@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>RepLoop</title>
+<meta name="theme-color" content="#262626">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RepLoop">
+<link rel="icon" id="favicon">
+<link rel="apple-touch-icon" id="touchicon">
+<link rel="manifest" id="manifest">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#262626;--bar:#1c1c1c;--ink:#111;--yellow:#f8f73c;--green:#97fb4a;--red:#ff5a4e;--blue:#3aa8e8;--purple:#b48cff;--muted:#8a8a8a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:#fff;font-family:"Bebas Neue",Impact,"Arial Narrow",sans-serif;overflow:hidden;overscroll-behavior:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+#app{display:flex;flex-direction:column;height:100dvh;padding-top:env(safe-area-inset-top)}
+header{position:relative;text-align:center;padding:8px 0 4px;color:var(--yellow);line-height:1}
+header .mode{font-size:28px}header .total{font-size:34px}
+.icon-btn{position:absolute;top:14px;width:44px;height:44px;display:grid;place-items:center;color:var(--yellow)}
+#gear{left:12px}#voiceBtn{right:12px}
+.icon-btn svg{width:30px;height:30px}
+#reset{position:absolute;right:68px;bottom:-34px;z-index:3;width:68px;height:68px;border-radius:50%;background:var(--bg);display:grid;place-items:center;color:var(--yellow);border:4px solid var(--yellow)}
+#reset svg{width:28px}
+#main{flex:1.9;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--yellow);color:var(--ink);transition:background .25s;min-height:0;position:relative;overflow:hidden}
+#phase{font-size:clamp(48px,11vh,110px);line-height:.9;margin-top:10px}
+#clock{font-size:clamp(110px,min(40vw,28vh),340px);line-height:.85;font-variant-numeric:tabular-nums;letter-spacing:-2px}
+#progress{position:absolute;left:0;bottom:0;height:8px;background:rgba(0,0,0,.25);width:0}
+#next{flex:.8;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--green);color:var(--ink);min-height:0;transition:background .25s}
+#nextLabel{font-size:clamp(22px,4vh,36px);line-height:1}
+#nextClock{font-size:clamp(56px,11vh,110px);line-height:.9}
+#controls{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:14px 8px 10px}
+.stat{text-align:center;line-height:.9}
+.stat b{display:block;font-weight:400;font-size:clamp(56px,10vh,96px)}
+.stat span{font-size:clamp(22px,3.6vh,34px)}
+#rStat b{color:var(--blue)}#cStat b{color:var(--yellow)}
+#play{display:flex;flex-direction:column;align-items:center;color:var(--yellow);font-size:28px}
+#play .ring{width:clamp(110px,17vh,156px);height:clamp(110px,17vh,156px);border-radius:50%;background:var(--yellow);display:grid;place-items:center;box-shadow:inset 0 0 0 6px var(--yellow),inset 0 0 0 9px #222}
+#play svg{width:42%;fill:#222}
+nav{display:flex;justify-content:space-around;background:var(--bar);padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:15px;padding:8px 0;border-radius:30px;color:#ddd}
+nav button.on{background:#000}
+nav svg{width:30px;height:30px}
+/* settings sheet */
+#sheet{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:10}
+#sheet.open{display:flex}
+#sheet .panel{background:#1d1d1d;width:100%;max-width:560px;border-radius:22px 22px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom));max-height:88dvh;overflow:auto}
+#sheet h2{margin:0 0 10px;font-weight:400;font-size:36px;color:var(--yellow);display:flex;justify-content:space-between;align-items:center}
+.row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #333;font-size:26px}
+.row .lab small{display:block;font-family:system-ui,sans-serif;font-size:12px;color:var(--muted)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:46px;height:46px;border-radius:50%;background:#333;font-size:30px;line-height:1;color:var(--yellow)}
+.step output{min-width:86px;text-align:center;font-size:32px}
+.toggle{width:58px;height:34px;border-radius:20px;background:#444;position:relative}
+.toggle::after{content:"";position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
+.toggle.on{background:var(--green)}.toggle.on::after{left:28px}
+select{font:inherit;font-size:18px;background:#333;color:#fff;border:0;border-radius:10px;padding:8px;max-width:200px;font-family:system-ui,sans-serif}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+.presets button{background:#333;border-radius:16px;padding:8px 14px;font-size:22px}
+.done{background:var(--yellow);color:#111;border-radius:14px;width:100%;padding:12px;font-size:30px;margin-top:16px}
+.hint{font-family:system-ui,sans-serif;font-size:13px;color:var(--muted);line-height:1.4;margin-top:14px}
+@media (orientation:landscape) and (max-height:560px){#next{display:none}#phase{font-size:13vh}#clock{font-size:38vh}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="icon-btn" id="gear" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <div class="mode" id="modeName">HIIT</div>
+    <div class="total" id="total">00:00</div>
+    <button class="icon-btn" id="voiceBtn" aria-label="Toggle voice"></button>
+    <button id="reset" aria-label="Reset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></button>
+  </header>
+  <section id="main"><div id="phase">PREPARE</div><div id="clock">00:10</div><div id="progress"></div></section>
+  <section id="next"><div id="nextLabel">WORK</div><div id="nextClock">00:30</div></section>
+  <section id="controls">
+    <div class="stat" id="rStat"><b id="rVal">10</b><span id="rLab">ROUNDS LEFT</span></div>
+    <button id="play"><div class="ring"><svg id="playIcon" viewBox="0 0 24 24"></svg></div><span id="playLab">START</span></button>
+    <div class="stat" id="cStat"><b id="cVal">1</b><span id="cLab">CYCLES LEFT</span></div>
+  </section>
+  <nav id="tabs"></nav>
+</div>
+
+<div id="sheet"><div class="panel" id="panel"></div></div>
+
+<script>
+/* ================= Install support (manifest + icon generated inline) ================= */
+const ICON_SVG=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="110" fill="#262626"/><circle cx="256" cy="276" r="160" fill="none" stroke="#f8f73c" stroke-width="40"/><rect x="226" y="60" width="60" height="50" rx="12" fill="#f8f73c"/><path d="M256 276 L256 160" stroke="#97fb4a" stroke-width="36" stroke-linecap="round"/><circle cx="256" cy="276" r="26" fill="#97fb4a"/></svg>`;
+function makePngIcon(size){const c=document.createElement('canvas');c.width=c.height=size;const x=c.getContext('2d');const s=size/512;
+  x.fillStyle='#262626';x.fillRect(0,0,size,size);x.strokeStyle='#f8f73c';x.lineWidth=40*s;x.beginPath();x.arc(256*s,276*s,160*s,0,7);x.stroke();
+  x.fillStyle='#f8f73c';x.fillRect(226*s,60*s,60*s,50*s);x.strokeStyle='#97fb4a';x.lineCap='round';x.lineWidth=36*s;x.beginPath();x.moveTo(256*s,276*s);x.lineTo(256*s,160*s);x.stroke();
+  x.fillStyle='#97fb4a';x.beginPath();x.arc(256*s,276*s,26*s,0,7);x.fill();return c.toDataURL('image/png')}
+(function(){
+  const svgUrl='data:image/svg+xml,'+encodeURIComponent(ICON_SVG);
+  document.getElementById('favicon').href=svgUrl;
+  const p180=makePngIcon(180),p192=makePngIcon(192),p512=makePngIcon(512);
+  document.getElementById('touchicon').href=p180;
+  const base=location.href.split('#')[0].split('?')[0];
+  const manifest={name:'RepLoop Interval Timer',short_name:'RepLoop',start_url:base,scope:base.replace(/[^/]*$/,''),display:'standalone',orientation:'any',
+    background_color:'#262626',theme_color:'#262626',icons:[{src:p192,sizes:'192x192',type:'image/png'},{src:p512,sizes:'512x512',type:'image/png',purpose:'any maskable'}]};
+  document.getElementById('manifest').href='data:application/manifest+json,'+encodeURIComponent(JSON.stringify(manifest));
+})();
+
+/* ================= Settings & storage ================= */
+const DEFAULTS={
+  hiit:{prepare:10,work:30,rest:15,rounds:10,cycles:1,cycleRest:60,cooldown:0},
+  emom:{prepare:10,interval:60,rounds:10},
+  amrap:{prepare:10,work:720},
+  stopwatch:{prepare:10,cap:0},
+  global:{voice:true,beeps:true,halfway:true,voiceName:'',rate:1.05}
+};
+let S;try{S=JSON.parse(localStorage.getItem('reploop'))||{}}catch(e){S={}}
+for(const k in DEFAULTS)S[k]=Object.assign({},DEFAULTS[k],S[k]||{});
+S.mode=S.mode||'hiit';
+function save(){try{localStorage.setItem('reploop',JSON.stringify(S))}catch(e){}}
+
+const MODES={hiit:'HIIT / Tabata',emom:'EMOM',amrap:'AMRAP',stopwatch:'For Time'};
+const COLORS={prepare:'var(--yellow)',work:'var(--green)',rest:'var(--red)',cycleRest:'var(--blue)',cooldown:'var(--purple)',done:'var(--yellow)'};
+const NAMES={prepare:'PREPARE',work:'WORK',rest:'REST',cycleRest:'CYCLE REST',cooldown:'COOL DOWN',done:'DONE'};
+
+/* ================= Build phase plan ================= */
+function buildPlan(){
+  const m=S.mode,c=S[m],P=[];
+  if(c.prepare>0)P.push({t:'prepare',d:c.prepare});
+  if(m==='hiit'){
+    for(let cy=1;cy<=c.cycles;cy++){
+      for(let r=1;r<=c.rounds;r++){
+        P.push({t:'work',d:c.work,r,cy});
+        const lastR=r===c.rounds;
+        if(!lastR&&c.rest>0)P.push({t:'rest',d:c.rest,r,cy});
+      }
+      if(cy<c.cycles&&c.cycleRest>0)P.push({t:'cycleRest',d:c.cycleRest,r:c.rounds,cy});
+    }
+    if(c.cooldown>0)P.push({t:'cooldown',d:c.cooldown});
+  }else if(m==='emom'){
+    for(let r=1;r<=c.rounds;r++)P.push({t:'work',d:c.interval,r,cy:1,label:'ROUND '+r});
+  }else if(m==='amrap'){
+    P.push({t:'work',d:c.work,r:1,cy:1,label:'AMRAP'});
+  }else{
+    P.push({t:'work',d:c.cap>0?c.cap:Infinity,r:1,cy:1,label:'GO',up:true});
+  }
+  return P;
+}
+
+/* ================= Audio: beeps + voice ================= */
+let ctx;
+function audio(){if(!ctx){const A=window.AudioContext||window.webkitAudioContext;ctx=new A()}if(ctx.state==='suspended')ctx.resume();return ctx}
+function beep(freq=880,dur=.15,vol=.5){if(!S.global.beeps)return;const a=audio(),o=a.createOscillator(),g=a.createGain();
+  o.type='square';o.frequency.value=freq;g.gain.setValueAtTime(vol*.4,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+dur);
+  o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur)}
+let voices=[];
+function loadVoices(){voices=(speechSynthesis.getVoices()||[]).filter(v=>/^en/i.test(v.lang));}
+if('speechSynthesis'in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function pickVoice(){if(S.global.voiceName){const v=voices.find(v=>v.name===S.global.voiceName);if(v)return v}
+  return voices.find(v=>/Samantha|Daniel|Google US English|Karen|Alex/i.test(v.name))||voices[0]}
+function say(text,interrupt=true){if(!S.global.voice||!('speechSynthesis'in window))return;
+  if(interrupt)speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);const v=pickVoice();if(v){u.voice=v;u.lang=v.lang}
+  u.rate=S.global.rate;u.volume=1;speechSynthesis.speak(u)}
+function unlockAudio(){audio();if('speechSynthesis'in window){const u=new SpeechSynthesisUtterance(' ');u.volume=0;speechSynthesis.speak(u)}}
+
+/* ================= Timer engine ================= */
+let plan=[],idx=0,phaseStart=0,pausedAt=0,running=false,started=false,lastSec=null,raf=null,wake=null,halfSaid=false;
+const $=id=>document.getElementById(id);
+const fmt=s=>{if(!isFinite(s))return'∞';s=Math.max(0,Math.ceil(s-1e-6));const m=Math.floor(s/60),x=s%60;return(m<10?'0':'')+m+':'+(x<10?'0':'')+x};
+const fmtUp=s=>{s=Math.floor(s);const m=Math.floor(s/60),x=s%60;return(m<10?'0':'')+m+':'+(x<10?'0':'')+x};
+const now=()=>performance.now()/1000;
+
+function reset(){cancelAnimationFrame(raf);running=false;started=false;plan=buildPlan();idx=0;pausedAt=0;lastSec=null;halfSaid=false;releaseWake();if('speechSynthesis'in window)speechSynthesis.cancel();render(0)}
+function elapsed(){return running?now()-phaseStart:pausedAt}
+
+function toggle(){
+  unlockAudio();
+  if(idx>=plan.length){reset();}
+  if(running){pausedAt=now()-phaseStart;running=false;cancelAnimationFrame(raf);say('Paused');releaseWake();render(pausedAt);return}
+  phaseStart=now()-pausedAt;running=true;requestWake();
+  if(!started){started=true;announce(plan[idx],true)}else say('Resume');
+  loop();
+}
+function loop(){
+  const p=plan[idx];let e=now()-phaseStart;
+  if(e>=p.d){ // advance (catch up if throttled)
+    while(idx<plan.length&&e>=plan[idx].d){e-=plan[idx].d;idx++;}
+    if(idx>=plan.length){finish();return}
+    phaseStart=now()-e;lastSec=null;halfSaid=false;announce(plan[idx]);
+  }
+  cues(plan[idx],e);render(e);raf=requestAnimationFrame(loop);
+}
+function cues(p,e){
+  if(p.up){const sec=Math.floor(e);if(sec!==lastSec){lastSec=sec;if(sec>0&&sec%60===0)say(Math.round(sec/60)+(sec===60?' minute':' minutes'))}return}
+  const left=Math.ceil(p.d-e);if(left===lastSec)return;lastSec=left;
+  if(S.global.halfway&&!halfSaid&&p.t==='work'&&p.d>=20&&e>=p.d/2){halfSaid=true;say('Halfway')}
+  if(p.d>=60&&left===30&&p.t==='work'&&S.mode!=='emom')say('30 seconds');
+  if(p.d>=20&&left===10&&p.t!=='prepare')say('10 seconds');
+  if(left<=3&&left>=1){beep(660,.12);if(p.d>5)say(String(left))}
+}
+function announce(p,first){
+  const next=plan[idx+1];beep(p.t==='work'?1100:880,.35);
+  let msg='';
+  if(p.t==='prepare')msg='Get ready';
+  else if(p.t==='work'){
+    if(S.mode==='hiit'){const c=S.hiit;msg=(p.r===c.rounds&&p.cy===c.cycles)?'Last round. Work!':(p.r===1&&c.cycles>1?'Cycle '+p.cy+'. Work!':'Work!')}
+    else if(S.mode==='emom')msg=p.r===S.emom.rounds?'Last round. Go!':'Round '+p.r+'. Go!';
+    else msg='Go!';
+  }
+  else if(p.t==='rest')msg='Rest';
+  else if(p.t==='cycleRest')msg='Cycle complete. Rest';
+  else if(p.t==='cooldown')msg='Cool down';
+  say(msg);
+}
+function finish(){running=false;cancelAnimationFrame(raf);idx=plan.length;beep(1200,.6);setTimeout(()=>beep(1200,.6),350);say('Workout complete. Great job!');releaseWake();render(0)}
+
+/* ================= Rendering ================= */
+function remainingTotal(e){if(S.mode==='stopwatch')return null;let t=0;for(let i=idx;i<plan.length;i++)t+=plan[i].d;return t-e}
+function render(e){
+  const done=idx>=plan.length,p=done?{t:'done',d:0}:plan[idx],next=plan[idx+1];
+  $('modeName').textContent=MODES[S.mode].toUpperCase();
+  const rt=remainingTotal(done?0:e);$('total').textContent=S.mode==='stopwatch'?(started&&!done&&p.up?fmtUp(e):(S.stopwatch.cap?'CAP '+fmt(S.stopwatch.cap):'NO CAP')):fmt(done?0:rt);
+  $('main').style.background=COLORS[p.t];
+  $('phase').textContent=done?'DONE':(p.label&&p.t==='work'?p.label:NAMES[p.t]);
+  $('clock').textContent=done?'00:00':(p.up?fmtUp(e):fmt(p.d-e));
+  $('progress').style.width=done||!isFinite(p.d)?'0':(Math.min(1,e/p.d)*100)+'%';
+  if(next){$('next').style.background=COLORS[next.t];$('nextLabel').textContent=next.label&&next.t==='work'?'NEXT: '+next.label:'NEXT: '+NAMES[next.t];$('nextClock').textContent=fmt(next.d)}
+  else{$('next').style.background='#3a3a3a';$('nextLabel').textContent=done?'WELL DONE':'FINISH';$('nextClock').textContent=done?'💪':'--:--'}
+  // stats
+  const m=S.mode,c=S[m];
+  let rounds=c.rounds||1,cycles=c.cycles||1;
+  let curR=p.r||0,curCy=p.cy||1;
+  if(p.t==='prepare'){curR=0;curCy=1}
+  if(done){curR=rounds;curCy=cycles}
+  let rLeft=rounds-curR+(p.t==='work'?1:0);if(p.t==='rest'||p.t==='cycleRest'||p.t==='cooldown')rLeft=rounds-curR;if(p.t==='prepare')rLeft=rounds;if(done)rLeft=0;
+  if(p.t==='cycleRest'){rLeft=rounds}
+  const cLeft=done?0:cycles-curCy+1-(p.t==='cooldown'?cycles:0);
+  if(m==='hiit'){$('rVal').textContent=Math.max(0,rLeft);$('rLab').textContent='ROUNDS LEFT';$('cVal').textContent=Math.max(0,p.t==='cycleRest'?cLeft-1:cLeft);$('cLab').textContent='CYCLES LEFT'}
+  else if(m==='emom'){$('rVal').textContent=Math.max(0,rLeft);$('rLab').textContent='ROUNDS LEFT';$('cVal').textContent=fmt(c.interval);$('cLab').textContent='EVERY'}
+  else if(m==='amrap'){$('rVal').textContent=laps;$('rLab').textContent='ROUNDS DONE';$('cVal').textContent='+1';$('cLab').textContent='TAP TO COUNT'}
+  else{$('rVal').textContent=laps;$('rLab').textContent='ROUNDS DONE';$('cVal').textContent='+1';$('cLab').textContent='TAP TO COUNT'}
+  $('playIcon').innerHTML=running?'<rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/>':'<path d="M8 5v14l11-7z"/>';
+  $('playLab').textContent=running?'PAUSE':(done?'AGAIN':(started?'RESUME':'START'));
+  if(S.mode==='stopwatch'&&running&&p.up&&p.d===Infinity){$('next').style.background='#3a3a3a';$('nextLabel').textContent='ELAPSED';$('nextClock').textContent=fmtUp(e)}
+}
+let laps=0;
+$('cStat').onclick=()=>{if((S.mode==='amrap'||S.mode==='stopwatch')&&running&&plan[idx]&&plan[idx].t==='work'){laps++;beep(990,.1);say('Round '+laps);render(elapsed())}};
+
+/* ================= Wake lock ================= */
+async function requestWake(){try{if('wakeLock'in navigator)wake=await navigator.wakeLock.request('screen')}catch(e){}}
+function releaseWake(){try{wake&&wake.release()}catch(e){}wake=null}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&running)requestWake()});
+
+/* ================= Tabs ================= */
+const TAB_ICONS={
+  hiit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="13" r="8"/><path d="M12 13V8M10 2h4M12 2v3"/></svg>',
+  emom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 12 7 7"/></svg>',
+  amrap:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/></svg>',
+  stopwatch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>'};
+function drawTabs(){$('tabs').innerHTML=Object.keys(MODES).map(k=>`<button data-m="${k}" class="${S.mode===k?'on':''}">${TAB_ICONS[k]}${k==='hiit'?'HIIT':k==='stopwatch'?'FOR TIME':MODES[k]}</button>`).join('');
+  $('tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{if(running&&!confirm('Stop current workout?'))return;S.mode=b.dataset.m;save();laps=0;drawTabs();reset()})}
+
+/* ================= Settings sheet ================= */
+const FIELDS={
+  hiit:[['prepare','Prepare','time',0],['work','Work','time',5],['rest','Rest','time',0],['rounds','Rounds','num',1,'Work intervals per cycle'],['cycles','Cycles','num',1,'Times to repeat all rounds'],['cycleRest','Rest between cycles','time',0],['cooldown','Cool down','time',0]],
+  emom:[['prepare','Prepare','time',0],['interval','Every','time',10,'New round starts each interval'],['rounds','Rounds','num',1]],
+  amrap:[['prepare','Prepare','time',0],['work','Time cap','time',30,'As many rounds as possible']],
+  stopwatch:[['prepare','Prepare','time',0],['cap','Time cap','time',0,'0 = no cap, counts up']]
+};
+const PRESETS={hiit:[['Tabata',{prepare:10,work:20,rest:10,rounds:8,cycles:1,cycleRest:60,cooldown:0}],['30/15 ×10',{work:30,rest:15,rounds:10,cycles:1}],['40/20 ×8 ×3',{work:40,rest:20,rounds:8,cycles:3,cycleRest:60}],['45/15 ×12',{work:45,rest:15,rounds:12,cycles:1}]],
+  emom:[['EMOM 10',{interval:60,rounds:10}],['E2MOM 8',{interval:120,rounds:8}],['E90s 12',{interval:90,rounds:12}]],
+  amrap:[['8 min',{work:480}],['12 min',{work:720}],['20 min',{work:1200}]],
+  stopwatch:[['No cap',{cap:0}],['10 cap',{cap:600}],['20 cap',{cap:1200}]]};
+function stepFor(v,type){if(type==='num')return 1;return v<60?5:v<300?15:60}
+function openSettings(){
+  const m=S.mode,c=S[m];
+  let h=`<h2>${MODES[m].toUpperCase()}<span id="sumTime" style="color:#fff;font-size:26px"></span></h2><div class="presets">${PRESETS[m].map((p,i)=>`<button data-p="${i}">${p[0]}</button>`).join('')}</div>`;
+  for(const [k,lab,type,min,hint] of FIELDS[m])h+=`<div class="row"><div class="lab">${lab}${hint?`<small>${hint}</small>`:''}</div><div class="step"><button data-k="${k}" data-d="-1">−</button><output id="o_${k}"></output><button data-k="${k}" data-d="1">+</button></div></div>`;
+  h+=`<h2 style="margin-top:18px">SOUND</h2>
+  <div class="row"><div class="lab">Voice coach</div><button class="toggle" data-g="voice"></button></div>
+  <div class="row"><div class="lab">Beeps</div><button class="toggle" data-g="beeps"></button></div>
+  <div class="row"><div class="lab">Say "Halfway"</div><button class="toggle" data-g="halfway"></button></div>
+  <div class="row"><div class="lab">Voice</div><select id="vsel"><option value="">Auto</option>${voices.map(v=>`<option ${v.name===S.global.voiceName?'selected':''}>${v.name}</option>`).join('')}</select></div>
+  <div class="row"><div class="lab">Speech speed</div><div class="step"><button data-r="-1">−</button><output id="o_rate"></output><button data-r="1">+</button></div></div>
+  <button class="done" id="doneBtn">DONE</button>
+  <p class="hint"><b>Install as app</b><br>iPhone: open in Safari → Share → <i>Add to Home Screen</i>.<br>Mac: Safari → File → <i>Add to Dock</i>, or Chrome → ⋮ → Cast, save &amp; share → <i>Install page as app</i>.<br>Keep the phone's silent switch off to hear voice on iOS.</p>`;
+  $('panel').innerHTML=h;
+  const fields=FIELDS[m];
+  const refresh=()=>{for(const [k,,type] of fields)$('o_'+k).textContent=type==='time'?(k==='cap'&&!c[k]?'OFF':fmt(c[k])):c[k];
+    $('o_rate').textContent=S.global.rate.toFixed(2)+'×';
+    $('panel').querySelectorAll('[data-g]').forEach(t=>t.classList.toggle('on',!!S.global[t.dataset.g]));
+    const tot=buildPlan().reduce((a,p)=>a+p.d,0);$('sumTime').textContent=isFinite(tot)?fmt(tot):''};
+  $('panel').querySelectorAll('[data-k]').forEach(b=>{let iv,to;const act=()=>{const k=b.dataset.k,f=fields.find(f=>f[0]===k),d=+b.dataset.d,st=stepFor(d<0?c[k]-1:c[k],f[2]);c[k]=Math.max(f[3],Math.min(f[2]==='num'?99:5940,c[k]+d*st));save();refresh()};
+    b.onpointerdown=e=>{e.preventDefault();act();to=setTimeout(()=>iv=setInterval(act,90),400)};const stop=()=>{clearTimeout(to);clearInterval(iv)};b.onpointerup=b.onpointerleave=b.onpointercancel=stop});
+  $('panel').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{Object.assign(c,PRESETS[m][+b.dataset.p][1]);save();refresh()});
+  $('panel').querySelectorAll('[data-g]').forEach(t=>t.onclick=()=>{S.global[t.dataset.g]=!S.global[t.dataset.g];save();refresh();drawVoiceBtn()});
+  $('panel').querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{S.global.rate=Math.max(.7,Math.min(1.6,S.global.rate+(+b.dataset.r)*.05));save();refresh();say('Work!')});
+  $('vsel').onchange=e=>{S.global.voiceName=e.target.value;save();unlockAudio();say('Three, two, one. Work!')};
+  $('doneBtn').onclick=closeSettings;
+  refresh();$('sheet').classList.add('open');
+}
+function closeSettings(){$('sheet').classList.remove('open');if(!running)reset()}
+$('sheet').onclick=e=>{if(e.target.id==='sheet')closeSettings()};
+$('gear').onclick=()=>{if(running)toggle();openSettings()};
+$('reset').onclick=()=>{laps=0;reset()};
+$('play').onclick=toggle;
+function drawVoiceBtn(){$('voiceBtn').innerHTML=S.global.voice?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'}
+$('voiceBtn').onclick=()=>{S.global.voice=!S.global.voice;save();drawVoiceBtn();if(S.global.voice){unlockAudio();say('Voice on')}};
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!$('sheet').classList.contains('open')){e.preventDefault();toggle()}else if(e.key==='r'){laps=0;reset()}});
+
+drawTabs();drawVoiceBtn();reset();
+</script>
+</body>
+</html>
